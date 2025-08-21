@@ -70,7 +70,7 @@ int getDayIndex(std::string& dayOfWeek) {
   if (dayOfWeek == "thursday") return DayOfWeek::THURSDAY;
   if (dayOfWeek == "friday") return DayOfWeek::FRIDAY;
   if (dayOfWeek == "saturday") return DayOfWeek::SATURDAY;
-  if (dayOfWeek == "sunday") return DayOfWeek::SUNDAY;
+  return DayOfWeek::SUNDAY;
 }
 
 bool isSpecialDay(int dayIndex) {
