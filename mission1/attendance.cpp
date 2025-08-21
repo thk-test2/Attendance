@@ -18,6 +18,10 @@ constexpr int BONUS_ATTEND_DAY_THRESHOLD = 10;
 constexpr int GOLD_GRADE_THRESHOLD = 50;
 constexpr int SILVER_GRADE_THRESHOLD = 30;
 
+const std::string GOLD_TEXT = "GOLD";
+const std::string SILVER_TEXT = "SILVER";
+const std::string NORMAL_TEXT = "NORMAL";
+
 enum DayOfWeek {
   MONDAY,
   TUESDAY,
@@ -100,10 +104,10 @@ int bonusPointForWeekends(UserInfo& userInfo) {
 
 std::string getUserGrade(int totalPoints) {
   if (totalPoints >= GOLD_GRADE_THRESHOLD)
-    return "GOLD";
+    return GOLD_TEXT;
   else if (totalPoints >= SILVER_GRADE_THRESHOLD)
-    return "SILVER";
-  return "NORMAL";
+    return SILVER_TEXT;
+  return NORMAL_TEXT;
 }
 
 void evaluateGrade(UserInfo& userInfo) {
@@ -113,7 +117,7 @@ void evaluateGrade(UserInfo& userInfo) {
 }
 
 bool isRemovedPlayer(UserInfo& userInfo) {
-  return userInfo.grade == "NORMAL" && userInfo.specialDayAttended == false;
+  return userInfo.grade == NORMAL_TEXT && userInfo.specialDayAttended == false;
 }
 
 void printUserInfo(UserInfo& userInfo) {
