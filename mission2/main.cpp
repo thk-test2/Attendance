@@ -1,199 +1,205 @@
-#include "gmock/gmock.h"
-
 #include "attendance.cpp"
+#include "gmock/gmock.h"
 
 using ::testing::HasSubstr;
 using ::testing::internal::CaptureStdout;
 using ::testing::internal::GetCapturedStdout;
 
 class AttendTestFixture : public ::testing::Test {
-public:
-	UserInfo userInfo;
-	IdInfo idInfo;
-	std::string testUser{ "test" };
-	std::array<UserInfo, MAX_USER_CNT> userInfoList;
-	std::unique_ptr<IPolicy> policy;
-	std::unique_ptr<AttendanceSystem> system;
+ public:
+  UserInfo userInfo;
+  IdInfo idInfo;
+  
+  std::array<UserInfo, MAX_USER_CNT> userInfoList;
+  std::unique_ptr<IPolicy> policy;
+  std::unique_ptr<AttendanceSystem> system;
 
-	const int NORMALDAY_POINT = 1;
-	const int WEEKENDS_POINT = 2;
-	const int TRAININGDAY_POINT = 3;
-	const int BONUS_POINT = 10;
+  const int NORMALDAY_POINT = 1;
+  const int WEEKENDS_POINT = 2;
+  const int TRAININGDAY_POINT = 3;
+  const int BONUS_POINT = 10;
 
-	const int BONUS_ATTEND_DAY_THRESHOLD = 10;
-	const int GOLD_GRADE_THRESHOLD = 50;
-	const int SILVER_GRADE_THRESHOLD = 30;
+  const int BONUS_ATTEND_DAY_THRESHOLD = 10;
+  const int GOLD_GRADE_THRESHOLD = 50;
+  const int SILVER_GRADE_THRESHOLD = 30;
 
-	void SetUp() {
-		policy = std::make_unique<CurrentPolicy>();
-		system = std::make_unique<AttendanceSystem>(policy.get());
-		userInfo = UserInfo{};
-	}
+  const std::string testUserName = "testUser";
+
+  const std::string MONDAY_TEXT = "monday";
+  const std::string TUESDAY_TEXT = "tuesday";
+  const std::string WEDNESDAY_TEXT = "wednesday";
+  const std::string THURSDAY_TEXT = "thursday";
+  const std::string FRIDAY_TEXT = "friday";
+  const std::string SATURDAY_TEXT = "saturday";
+  const std::string SUNDAY_TEXT = "sunday";
+
+  const std::string GOLD_TEXT = "GOLD";
+  const std::string SILVER_TEXT = "SILVER";
+  const std::string NORMAL_TEXT = "NORMAL";
+
+  void SetUp() {
+    policy = std::make_unique<CurrentPolicy>();
+    system = std::make_unique<AttendanceSystem>(policy.get());
+  }
 };
 
 TEST_F(AttendTestFixture, isNewUser) {
-	bool actual = system->isNewUser(testUser, idInfo);
+  bool actual = system->isNewUser(testUserName, idInfo);
 
-	EXPECT_EQ(true, actual);
+  EXPECT_EQ(true, actual);
 }
 
 TEST_F(AttendTestFixture, addNewUser) {
-	system->addNewUser(idInfo, testUser, userInfoList);
+  system->addNewUser(idInfo, testUserName, userInfoList);
 
-	EXPECT_EQ(testUser, userInfoList.at(idInfo.totalUsers).name);
+  EXPECT_EQ(testUserName, userInfoList.at(idInfo.totalUsers).name);
 }
 
 TEST_F(AttendTestFixture, getUniformId) {
-	system->addNewUser(idInfo, testUser, userInfoList);
-	int actual = system->getUniformId(testUser, idInfo);
+  system->addNewUser(idInfo, testUserName, userInfoList);
+  int actual = system->getUniformId(testUserName, idInfo);
 
-	EXPECT_EQ(1, actual);
+  EXPECT_EQ(1, actual);
 }
 
 TEST_F(AttendTestFixture, getDayIndex) {
-	std::string monday{ "monday" };
-	std::string tuesday{ "tuesday" };
-	std::string wednesday{ "wednesday" };
-	std::string thursday{ "thursday" };
-	std::string friday{ "friday" };
-	std::string saturday{ "saturday" };
-	std::string sunday{ "sunday" };
-	EXPECT_EQ(DayOfWeek::MONDAY, system->getDayIndex(monday));
-	EXPECT_EQ(DayOfWeek::TUESDAY, system->getDayIndex(tuesday));
-	EXPECT_EQ(DayOfWeek::WEDNESDAY, system->getDayIndex(wednesday));
-	EXPECT_EQ(DayOfWeek::THURSDAY, system->getDayIndex(thursday));
-	EXPECT_EQ(DayOfWeek::FRIDAY, system->getDayIndex(friday));
-	EXPECT_EQ(DayOfWeek::SATURDAY, system->getDayIndex(saturday));
-	EXPECT_EQ(DayOfWeek::SUNDAY, system->getDayIndex(sunday));
+  EXPECT_EQ(DayOfWeek::MONDAY, system->getDayIndex(MONDAY_TEXT));
+  EXPECT_EQ(DayOfWeek::TUESDAY, system->getDayIndex(TUESDAY_TEXT));
+  EXPECT_EQ(DayOfWeek::WEDNESDAY, system->getDayIndex(WEDNESDAY_TEXT));
+  EXPECT_EQ(DayOfWeek::THURSDAY, system->getDayIndex(THURSDAY_TEXT));
+  EXPECT_EQ(DayOfWeek::FRIDAY, system->getDayIndex(FRIDAY_TEXT));
+  EXPECT_EQ(DayOfWeek::SATURDAY, system->getDayIndex(SATURDAY_TEXT));
+  EXPECT_EQ(DayOfWeek::SUNDAY, system->getDayIndex(SUNDAY_TEXT));
 }
 
-TEST_F(AttendTestFixture, isSpecialDay) {
-	int dayIndex = DayOfWeek::WEDNESDAY;
+TEST_F(AttendTestFixture, isSpecialDay_True) {
+  int dayIndex = DayOfWeek::WEDNESDAY;
 
-	bool actual = policy->isSpecialDay(dayIndex);
+  bool actual = policy->isSpecialDay(dayIndex);
 
-	EXPECT_EQ(true, actual);
+  EXPECT_EQ(true, actual);
+}
+
+TEST_F(AttendTestFixture, isSpecialDay_False) {
+  int dayIndex = DayOfWeek::MONDAY;
+
+  bool actual = policy->isSpecialDay(dayIndex);
+
+  EXPECT_EQ(false, actual);
 }
 
 TEST_F(AttendTestFixture, getDayPoints) {
-	int dayIndex = DayOfWeek::WEDNESDAY;
+  int dayIndex = DayOfWeek::WEDNESDAY;
 
-	int actual = policy->getDayPoints(dayIndex);
+  int actual = policy->getDayPoints(dayIndex);
 
-	EXPECT_EQ(TRAININGDAY_POINT, actual);
+  EXPECT_EQ(TRAININGDAY_POINT, actual);
 }
 
 TEST_F(AttendTestFixture, bonusPointForTrainingDay) {
-	userInfo.attendHistory[DayOfWeek::WEDNESDAY] = 999;
+  userInfo.attendHistory[DayOfWeek::WEDNESDAY] = 999;
 
-	int actual = policy->bonusPointForTrainingDay(userInfo);
+  int actual = policy->bonusPointForTrainingDay(userInfo);
 
-	EXPECT_EQ(BONUS_POINT, actual);
+  EXPECT_EQ(BONUS_POINT, actual);
 }
 
 TEST_F(AttendTestFixture, bonusPointForWeekends) {
-	userInfo.attendHistory[DayOfWeek::SATURDAY] = 999;
+  userInfo.attendHistory[DayOfWeek::SATURDAY] = 999;
 
-	int actual = policy->bonusPointForWeekends(userInfo);
+  int actual = policy->bonusPointForWeekends(userInfo);
 
-	EXPECT_EQ(BONUS_POINT, actual);
+  EXPECT_EQ(BONUS_POINT, actual);
 }
 
 TEST_F(AttendTestFixture, getUserGrade_GOLD) {
-	int totalPoints = GOLD_GRADE_THRESHOLD;
+  int totalPoints = GOLD_GRADE_THRESHOLD;
 
-	std::string actual = policy->getUserGrade(totalPoints);
+  std::string actual = policy->getUserGrade(totalPoints);
 
-	EXPECT_EQ("GOLD", actual);
+  EXPECT_EQ(GOLD_TEXT, actual);
 }
 
 TEST_F(AttendTestFixture, getUserGrade_SILVER) {
-	int totalPoints = SILVER_GRADE_THRESHOLD;
+  int totalPoints = SILVER_GRADE_THRESHOLD;
 
-	std::string actual = policy->getUserGrade(totalPoints);
+  std::string actual = policy->getUserGrade(totalPoints);
 
-	EXPECT_EQ("SILVER", actual);
+  EXPECT_EQ(SILVER_TEXT, actual);
 }
 
 TEST_F(AttendTestFixture, getUserGrade_NORMAL) {
-	int totalPoints = 0;
+  int totalPoints = 0;
 
-	std::string actual = policy->getUserGrade(totalPoints);
+  std::string actual = policy->getUserGrade(totalPoints);
 
-	EXPECT_EQ("NORMAL", actual);
+  EXPECT_EQ(NORMAL_TEXT, actual);
 }
 
 TEST_F(AttendTestFixture, evaluateGrade) {
-	userInfo.totalPoints = 999;
+  userInfo.totalPoints = 999;
 
-	policy->evaluateGrade(userInfo);
+  policy->evaluateGrade(userInfo);
 
-	EXPECT_EQ("GOLD", userInfo.grade);
+  EXPECT_EQ(GOLD_TEXT, userInfo.grade);
 }
 
 TEST_F(AttendTestFixture, isRemovedPlayer) {
-	userInfo.grade = "NORMAL";
-	userInfo.specialDayAttended = false;
+  userInfo.grade = NORMAL_TEXT;
+  userInfo.specialDayAttended = false;
 
-	bool actual = policy->isRemovedPlayer(userInfo);
+  bool actual = policy->isRemovedPlayer(userInfo);
 
-	EXPECT_EQ(true, actual);
+  EXPECT_EQ(true, actual);
 }
 
 TEST_F(AttendTestFixture, printUserInfo) {
-	userInfo.name = "test";
-	userInfo.totalPoints = 999;
-	userInfo.grade = "GOLD";
+  userInfo.name = testUserName;
+  userInfo.totalPoints = 999;
+  userInfo.grade = GOLD_TEXT;
 
-	CaptureStdout();
-	system->printUserInfo(userInfo);
-	std::string actual = GetCapturedStdout();
+  CaptureStdout();
+  system->printUserInfo(userInfo);
+  std::string actual = GetCapturedStdout();
 
-	EXPECT_THAT(actual, HasSubstr("NAME : test"));
-	EXPECT_THAT(actual, HasSubstr("POINT : 999"));
-	EXPECT_THAT(actual, HasSubstr("GRADE : GOLD"));
+  EXPECT_THAT(actual, HasSubstr("NAME : test"));
+  EXPECT_THAT(actual, HasSubstr("POINT : 999"));
+  EXPECT_THAT(actual, HasSubstr("GRADE : GOLD"));
 }
 
 TEST_F(AttendTestFixture, printRemovedUser) {
-	userInfo.name = "test";
-	userInfo.totalPoints = 0;
-	userInfo.grade = "NORMAL";
+  userInfo.name = testUserName;
+  userInfo.totalPoints = 0;
+  userInfo.grade = NORMAL_TEXT;
 
-	idInfo.totalUsers = 1;
+  idInfo.totalUsers = 1;
 
-	userInfoList.at(1) = userInfo;
+  userInfoList.at(1) = userInfo;
 
-	CaptureStdout();
-	system->printRemovedUser(idInfo, userInfoList);
-	std::string actual = GetCapturedStdout();
+  CaptureStdout();
+  system->printRemovedUser(idInfo, userInfoList);
+  std::string actual = GetCapturedStdout();
 
-	EXPECT_THAT(actual, HasSubstr("Removed player"));
-	EXPECT_THAT(actual, HasSubstr("test"));
+  EXPECT_THAT(actual, HasSubstr("Removed player"));
+  EXPECT_THAT(actual, HasSubstr(testUserName));
 }
 
 TEST_F(AttendTestFixture, analyzeEachRecord) {
-	std::string test = "test";
-	std::string day = "monday";
+  system->analyzeEachRecord(testUserName, MONDAY_TEXT, idInfo, userInfoList);
 
-	system->analyzeEachRecord(test, day, idInfo, userInfoList);
-
-	EXPECT_EQ(1, userInfoList.at(1).attendHistory[system->getDayIndex(day)]);
-	EXPECT_EQ(1, userInfoList.at(1).totalPoints);
+  EXPECT_EQ(1, userInfoList.at(1).attendHistory[system->getDayIndex(MONDAY_TEXT)]);
+  EXPECT_EQ(1, userInfoList.at(1).totalPoints);
 }
 
 TEST_F(AttendTestFixture, analyzeAllRecord) {
-
-	EXPECT_NO_THROW(system->analyzeAllRecord(idInfo, userInfoList));
+  EXPECT_NO_THROW(system->analyzeAllRecord(idInfo, userInfoList));
 }
 
 TEST_F(AttendTestFixture, analyzeAndPrintUserInfo) {
-
-	EXPECT_NO_THROW(system->analyzeAndPrintUserInfo());
+  EXPECT_NO_THROW(system->analyzeAndPrintUserInfo());
 }
 
 int main() {
-	::testing::InitGoogleMock();
-	return RUN_ALL_TESTS();
-
-	// analyzeAndPrintUserInfo();
+  ::testing::InitGoogleMock();
+  return RUN_ALL_TESTS();
 }
