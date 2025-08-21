@@ -1,132 +1,178 @@
-#include <algorithm>
+癤�#include <algorithm>
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
 
-using namespace std;
+constexpr int ATTEND_HISTORY_CNT = 500;
+constexpr int MAX_USER_CNT = 100;
+constexpr int DAYS_OF_WEEK = 7;
 
-struct Node {
-  string w;
-  string wk;
+constexpr int NORMALDAY_POINT = 1;
+constexpr int WEEKENDS_POINT = 2;
+constexpr int TRAININGDAY_POINT = 3;
+constexpr int BONUS_POINT = 10;
+
+constexpr int BONUS_ATTEND_DAY_THRESHOLD = 10;
+constexpr int GOLD_GRADE_THRESHOLD = 50;
+constexpr int SILVER_GRADE_THRESHOLD = 30;
+
+enum Grade { NORMAL, GOLD, SILVER };
+
+enum DayOfWeek {
+  MONDAY,
+  TUESDAY,
+  WEDNESDAY,
+  THURSDAY,
+  FRIDAY,
+  SATURDAY,
+  SUNDAY
 };
 
-map<string, int> id1;
-int id_cnt = 0;
+struct IdInfo {
+  std::map<std::string, int> idTable;
+  int totalUsers{0};
+};
 
-// dat[사용자ID][요일]
-int dat[100][100];
-int points[100];
-int grade[100];
-string names[100];
+struct UserInfo {
+  std::string name{};
+  std::string grade{};
+  int attendHistory[DAYS_OF_WEEK]{0};
+  int totalPoints{0};
+  bool specialDayAttended{false};
+};
 
-int wed[100];
-int weeken[100];
-
-void input2(string w, string wk) {
-  // ID 부여
-  if (id1.count(w) == 0) {
-    id1.insert({w, ++id_cnt});
-
-    if (w == "Daisy") {
-      int debug = 1;
-    }
-
-    names[id_cnt] = w;
-  }
-  int id2 = id1[w];
-
-  // 디버깅용
-  if (w == "Daisy") {
-    int debug = 1;
-  }
-
-  int add_point = 0;
-  int index = 0;
-  if (wk == "monday") {
-    index = 0;
-    add_point++;
-  }
-  if (wk == "tuesday") {
-    index = 1;
-    add_point++;
-  }
-  if (wk == "wednesday") {
-    index = 2;
-    add_point += 3;
-    wed[id2] += 1;
-  }
-  if (wk == "thursday") {
-    index = 3;
-    add_point++;
-  }
-  if (wk == "friday") {
-    index = 4;
-    add_point++;
-  }
-  if (wk == "saturday") {
-    index = 5;
-    add_point += 2;
-    weeken[id2] += 1;
-  }
-  if (wk == "sunday") {
-    index = 6;
-    add_point += 2;
-    weeken[id2] += 1;
-  }
-
-  // 사용자ID별 요일 데이터에 1씩 증가
-  dat[id2][index] += 1;
-  points[id2] += add_point;
+bool isNewUser(std::string& userName, IdInfo& idInfo) {
+  return idInfo.idTable.count(userName) == 0;
 }
 
-void input() {
-  ifstream fin{"attendance_weekday_500.txt"};  // 500개 데이터 입력
-  for (int i = 0; i < 500; i++) {
-    string t1, t2;
-    fin >> t1 >> t2;
-    input2(t1, t2);
-  }
+void addNewUser(IdInfo& idInfo, std::string& userName,
+                std::array<UserInfo, MAX_USER_CNT>& userInfoList) {
+  idInfo.idTable.insert({userName, ++(idInfo.totalUsers)});
+  userInfoList.at(idInfo.totalUsers).name = userName;
+}
 
-  for (int i = 1; i <= id_cnt; i++) {
-    if (dat[i][2] > 9) {
-      points[i] += 10;
-    }
+int getUniformId(std::string& userName, IdInfo& idInfo) {
+  return idInfo.idTable[userName];
+}
 
-    if (dat[i][5] + dat[i][6] > 9) {
-      points[i] += 10;
-    }
+void checkIfDebugData(std::string& userName) {
+  if (userName == "Daisy") int debug = 1;
+}
 
-    if (points[i] >= 50) {
-      grade[i] = 1;
-    } else if (points[i] >= 30) {
-      grade[i] = 2;
-    } else {
-      grade[i] = 0;
-    }
+int getDayIndex(std::string& dayOfWeek) {
+  if (dayOfWeek == "monday") return DayOfWeek::MONDAY;
+  if (dayOfWeek == "tuesday") return DayOfWeek::TUESDAY;
+  if (dayOfWeek == "wednesday") return DayOfWeek::WEDNESDAY;
+  if (dayOfWeek == "thursday") return DayOfWeek::THURSDAY;
+  if (dayOfWeek == "friday") return DayOfWeek::FRIDAY;
+  if (dayOfWeek == "saturday") return DayOfWeek::SATURDAY;
+  if (dayOfWeek == "sunday") return DayOfWeek::SUNDAY;
+}
 
-    cout << "NAME : " << names[i] << ", ";
-    cout << "POINT : " << points[i] << ", ";
-    cout << "GRADE : ";
+bool isSpecialDay(int dayIndex) {
+  if (dayIndex == DayOfWeek::WEDNESDAY || dayIndex == DayOfWeek::SATURDAY ||
+      dayIndex == DayOfWeek::SUNDAY)
+    return true;
+  return false;
+}
 
-    if (grade[i] == 1) {
-      cout << "GOLD" << "\n";
-    } else if (grade[i] == 2) {
-      cout << "SILVER" << "\n";
-    } else {
-      cout << "NORMAL" << "\n";
-    }
-  }
+int getDayPoints(int dayIndex) {
+  if (dayIndex == DayOfWeek::WEDNESDAY)
+    return TRAININGDAY_POINT;
+  else if ((dayIndex == DayOfWeek::SATURDAY) || (dayIndex == DayOfWeek::SUNDAY))
+    return WEEKENDS_POINT;
+  return NORMALDAY_POINT;
+}
 
+int bonusPointForTrainingDay(UserInfo& userInfo) {
+  if (userInfo.attendHistory[DayOfWeek::WEDNESDAY] >=
+      BONUS_ATTEND_DAY_THRESHOLD)
+    return BONUS_POINT;
+  return 0;
+}
+
+int bonusPointForWeekends(UserInfo& userInfo) {
+  if ((userInfo.attendHistory[DayOfWeek::SATURDAY] +
+       userInfo.attendHistory[DayOfWeek::SUNDAY]) >= BONUS_ATTEND_DAY_THRESHOLD)
+    return BONUS_POINT;
+  return 0;
+}
+
+std::string getUserGrade(int totalPoints) {
+  if (totalPoints >= GOLD_GRADE_THRESHOLD)
+    return "GOLD";
+  else if (totalPoints >= SILVER_GRADE_THRESHOLD)
+    return "SILVER";
+  return "NORMAL";
+}
+
+void evaluateGrade(UserInfo& userInfo) {
+  userInfo.totalPoints += bonusPointForTrainingDay(userInfo);
+  userInfo.totalPoints += bonusPointForWeekends(userInfo);
+  userInfo.grade = getUserGrade(userInfo.totalPoints);
+}
+
+bool isRemovedPlayer(UserInfo& userInfo) {
+  return userInfo.grade == "NORMAL" && userInfo.specialDayAttended == false;
+}
+
+void printUserInfo(UserInfo& userInfo) {
+  std::cout << "NAME : " << userInfo.name << ", ";
+  std::cout << "POINT : " << userInfo.totalPoints << ", ";
+  std::cout << "GRADE : " << userInfo.grade << "\n";
+}
+
+void printRemovedUser(IdInfo& idInfo,
+                      std::array<UserInfo, 100Ui64>& userInfoList) {
   std::cout << "\n";
   std::cout << "Removed player\n";
   std::cout << "==============\n";
-  for (int i = 1; i <= id_cnt; i++) {
-    if (grade[i] != 1 && grade[i] != 2 && wed[i] == 0 && weeken[i] == 0) {
-      std::cout << names[i] << "\n";
-    }
+  for (int uniformId = 1; uniformId <= idInfo.totalUsers; uniformId++) {
+    UserInfo& userInfo = userInfoList.at(uniformId);
+    if (isRemovedPlayer(userInfo)) std::cout << userInfo.name << "\n";
   }
 }
 
-int main() { input(); }
+void analyzeEachRecord(std::string& userName, std::string& dayOfWeek,
+                       IdInfo& idInfo,
+                       std::array<UserInfo, MAX_USER_CNT>& userInfoList) {
+  if (isNewUser(userName, idInfo)) {
+    addNewUser(idInfo, userName, userInfoList);
+  }
+  UserInfo& userInfo = userInfoList.at(getUniformId(userName, idInfo));
+
+  checkIfDebugData(userName);
+
+  if (isSpecialDay(getDayIndex(dayOfWeek))) userInfo.specialDayAttended = true;
+
+  userInfo.attendHistory[getDayIndex(dayOfWeek)] += 1;
+  userInfo.totalPoints += getDayPoints(getDayIndex(dayOfWeek));
+}
+
+void analyzeAllRecord(IdInfo& idInfo,
+                      std::array<UserInfo, 100Ui64>& userInfoList) {
+  std::ifstream fin{"attendance_weekday_500.txt"};
+  for (int i = 0; i < ATTEND_HISTORY_CNT; i++) {
+    std::string userName, dayOfWeek;
+    fin >> userName >> dayOfWeek;
+    analyzeEachRecord(userName, dayOfWeek, idInfo, userInfoList);
+  }
+}
+
+void analyzeAndPrintUserInfo() {
+  IdInfo idInfo;
+  std::array<UserInfo, MAX_USER_CNT> userInfoList;
+
+  analyzeAllRecord(idInfo, userInfoList);
+
+  for (int uniformId = 1; uniformId <= idInfo.totalUsers; uniformId++) {
+    evaluateGrade(userInfoList.at(uniformId));
+    printUserInfo(userInfoList.at(uniformId));
+  }
+
+  printRemovedUser(idInfo, userInfoList);
+}
+
+int main() { analyzeAndPrintUserInfo(); }
