@@ -18,8 +18,6 @@ constexpr int BONUS_ATTEND_DAY_THRESHOLD = 10;
 constexpr int GOLD_GRADE_THRESHOLD = 50;
 constexpr int SILVER_GRADE_THRESHOLD = 30;
 
-enum Grade { NORMAL, GOLD, SILVER };
-
 enum DayOfWeek {
   MONDAY,
   TUESDAY,

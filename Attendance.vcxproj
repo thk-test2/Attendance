@@ -124,9 +124,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mission1\attendance.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="mission2\attendance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="attendance_weekday_500.txt" />
