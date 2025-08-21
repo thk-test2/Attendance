@@ -125,7 +125,7 @@ void printUserInfo(UserInfo& userInfo) {
 }
 
 void printRemovedUser(IdInfo& idInfo,
-                      std::array<UserInfo, 100Ui64>& userInfoList) {
+                      std::array<UserInfo, MAX_USER_CNT>& userInfoList) {
   std::cout << "\n";
   std::cout << "Removed player\n";
   std::cout << "==============\n";
@@ -152,7 +152,7 @@ void analyzeEachRecord(std::string& userName, std::string& dayOfWeek,
 }
 
 void analyzeAllRecord(IdInfo& idInfo,
-                      std::array<UserInfo, 100Ui64>& userInfoList) {
+                      std::array<UserInfo, MAX_USER_CNT>& userInfoList) {
   std::ifstream fin{"attendance_weekday_500.txt"};
   for (int i = 0; i < ATTEND_HISTORY_CNT; i++) {
     std::string userName, dayOfWeek;
