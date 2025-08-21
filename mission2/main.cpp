@@ -1,5 +1,6 @@
-#include "attendance.cpp"
 #include "gmock/gmock.h"
+
+#include "attendance.cpp"
 
 using ::testing::HasSubstr;
 using ::testing::internal::CaptureStdout;
